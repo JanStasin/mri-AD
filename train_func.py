@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 #from torch.utils.data import Dataset, DataLoader
 
 from sklearn.metrics import accuracy_score, confusion_matrix
@@ -14,6 +15,7 @@ from gradCAM_func import gradCAM, gradCAMS_saver
 def train_model(model, train_loader, val_loader, encoded_labels, rate_l, NUM_EPOCHS=800,  save=True, thresh=50):
     loss_fn = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=rate_l)
+    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.025, patience=10)
     losses_epoch_mean = []
     for epoch in range(NUM_EPOCHS):
         losses_epoch = []
@@ -39,9 +41,14 @@ def train_model(model, train_loader, val_loader, encoded_labels, rate_l, NUM_EPO
             optimizer.step()
             losses_epoch.append(loss.item())
         
-        losses_epoch_mean.append(np.mean(losses_epoch))
-        if epoch % (int(NUM_EPOCHS/10)) == 0:
-            print(f'Epoch {epoch}/{NUM_EPOCHS}, Loss: {np.mean(losses_epoch):.16f}')
+        epoch_mean_loss = np.mean(losses_epoch)
+        losses_epoch_mean.append(epoch_mean_loss)
+
+        # Step the scheduler with the epoch mean loss
+        scheduler.step(epoch_mean_loss)
+
+        if epoch % (int(NUM_EPOCHS/100)) == 0:
+            print(f'Epoch {epoch}/{NUM_EPOCHS}, Loss: {np.mean(losses_epoch):.16f}lr: {scheduler.get_last_lr()}')
 
     #sns.lineplot(x=list(range(len(losses_epoch_mean))), y=losses_epoch_mean)
     y_val = []

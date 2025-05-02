@@ -14,8 +14,6 @@ from model import ClassifNetXAI
 from gradCAM_func import gradCAM, gradCAMS_saver
 from train_func import train_model
 
-
-
 DATA_DIR = '/Users/jansta/learn/mri-AD/Data/'
 
 # Load the parquet files
@@ -69,7 +67,7 @@ test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
 model = ClassifNetXAI()
 
-NUM_EPOCHS = 300
-for rl in [0.00075, 0.0005, 0.00025, 0.00005]:
+NUM_EPOCHS = 900
+for rl in [0.0001]:
     out = train_model(model, train_loader, test_loader, encoded_labels, rate_l=rl, NUM_EPOCHS=NUM_EPOCHS,  save=True, thresh=0.5)
 
